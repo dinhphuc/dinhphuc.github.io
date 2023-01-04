@@ -16,8 +16,13 @@ var getUrlParameter = function getUrlParameter(sParam) {
 };
 
 $(document).ready(function() {
+
+  const year = (new Date()).getFullYear();
+  $('#year').text(year);
+
   var name = getUrlParameter('name');
   $('#fullname').text(name);
+ 
   var type = getUrlParameter('type');
   if (parseInt(type) > 0 && parseInt(type) <= 6) {
     var str = '';
