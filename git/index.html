@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Configuration Instructions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.10/clipboard.min.js"></script>
+    <style>
+        .command-block {
+            position: relative;
+            background: #f8f9fa;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+        }
+        pre {
+            white-space: pre-wrap;
+            margin-bottom: 0;
+        }
+        .progress {
+            height: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container mt-5">
+        <h2 class="mb-4">Configure Multiple Git Accounts</h2>
+        <form @submit.prevent="generateInstructions" class="mb-4">
+            <div class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label for="email" class="col-form-label">Email:</label>
+                </div>
+                <div class="col">
+                    <input type="email" id="email" class="form-control" v-model="email" @input="updateFileName" placeholder="Enter your email" required>
+                </div>
+                <div class="col-auto">
+                    <label for="fileName" class="col-form-label">File name:</label>
+                </div>
+                <div class="col">
+                    <input type="text" id="fileName" class="form-control" v-model="fileName" placeholder="Enter file name" required>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-gear-fill me-2"></i>Generate
+                    </button>
+                </div>
+            </div>
+        </form>
+        <div v-if="instructions">
+            <div class="progress mb-4">
+                <div class="progress-bar" role="progressbar" :style="{ width: progress + '%' }" :aria-valuenow="progress" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <div class="accordion" id="instructionsAccordion">
+                <div class="accordion-item" v-for="(step, index) in steps" :key="index">
+                    <h2 class="accordion-header" :id="'heading' + index">
+                        <button class="accordion-button" :class="{ collapsed: index !== 0 }" type="button" data-bs-toggle="collapse" :data-bs-target="'#collapse' + index" :aria-expanded="index === 0 ? 'true' : 'false'" :aria-controls="'collapse' + index">
+                            Step {{ index + 1 }}: {{ step.title }}
+                        </button>
+                    </h2>
+                    <div :id="'collapse' + index" class="accordion-collapse collapse" :class="{ show: index === 0 }" :aria-labelledby="'heading' + index" data-bs-parent="#instructionsAccordion">
+                        <div class="accordion-body" v-html="step.content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                email: '',
+                fileName: '',
+                instructions: '',
+                progress: 0,
+                steps: []
+            },
+            methods: {
+                updateFileName() {
+                    this.fileName = this.email.split('@')[0];
+                },
+                generateInstructions() {
+                    const commandBlocks = [
+                        "mkdir .ssh",
+                        `ssh-keygen -t rsa -C "${this.email}" -f "id_rsa_${this.fileName}"`,
+                        'exec ssh-agent bash',
+                        `ssh-add ~/.ssh/id_rsa_${this.fileName}`,
+                        `git clone git@github-${this.fileName}:username/PROJECT_NAME.git`,
+                        `git config user.name ${this.fileName}`,
+                        `git config user.email ${this.email}`
+                    ];
+
+                    this.steps = [
+                        {
+                            title: "Check .ssh directory",
+                            content: `
+                                <p>Check if the directory <code>C:\\Users\\username\\.ssh</code> exists:</p>
+                                <ul>
+                                    <li>If it exists, go to the next step</li>
+                                    <li>If not:
+                                        <ul>
+                                            <li>Open cmd (Run as administrator)</li>
+                                            <li>Navigate to <code>C:\\Users\\username</code></li>
+                                            <li>Run command: ${this.createCommandBlock(commandBlocks[0])}</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            `
+                        },
+                        {
+                            title: "Create SSH key",
+                            content: `
+                                <p>To create an SSH key:</p>
+                                <ol>
+                                    <li>Navigate to directory <code>C:\\Users\\username\\.ssh</code></li>
+                                    <li>Open git bash here</li>
+                                    <li>Run command: ${this.createCommandBlock(commandBlocks[1])}</li>
+                                </ol>
+                            `
+                        },
+                        {
+                            title: "Add SSH key to GitHub",
+                            content: `
+                                <ol>
+                                    <li>Go to GitHub account → Settings → SSH and GPG keys</li>
+                                    <li>Title: should be computer name (e.g., PC_ABC001)</li>
+                                    <li>Key: content of file <code>id_rsa_${this.fileName}.pub</code></li>
+                                </ol>
+                            `
+                        },
+                        {
+                            title: "Add SSH key to Windows",
+                            content: `
+                                <ol>
+                                    <li>Navigate to <code>C:\\Program Files\\Git\\bin</code></li>
+                                    <li>Click file <code>bash.exe</code></li>
+                                    <li>Run command: ${this.createCommandBlock(commandBlocks[2])}</li>
+                                    <li>Run command: ${this.createCommandBlock(commandBlocks[3])}</li>
+                                </ol>
+                            `
+                        },
+                        {
+                            title: "Create config file",
+                            content: `
+                                <ol>
+                                    <li>Navigate to directory <code>C:\\Users\\username\\.ssh</code></li>
+                                    <li>Create a config file with the following content:</li>
+                                </ol>
+                                <pre class="bg-light p-3 rounded">
+# Default GitHub
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_rsa
+Host github-${this.fileName}
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_rsa_${this.fileName}
+                                </pre>
+                            `
+                        },
+                        {
+                            title: "Clone git repository",
+                            content: `
+                                <ol>
+                                    <li>Navigate to the directory where you want to store the project</li>
+                                    <li>Open git bash here</li>
+                                    <li>Run command: ${this.createCommandBlock(commandBlocks[4])}</li>
+                                </ol>
+                            `
+                        },
+                        {
+                            title: "Push code with second GitHub user",
+                            content: `
+                                <ol>
+                                    <li>Navigate to the directory storing the cloned project</li>
+                                    <li>Open git bash here</li>
+                                    <li>Run command: ${this.createCommandBlock(commandBlocks[5])}</li>
+                                    <li>Run command: ${this.createCommandBlock(commandBlocks[6])}</li>
+                                </ol>
+                            `
+                        }
+                    ];
+
+                    this.instructions = true;
+                    this.updateProgress();
+                    this.$nextTick(() => {
+                        new ClipboardJS('.copy-btn', {
+                            text: (trigger) => trigger.previousElementSibling.textContent
+                        }).on('success', (e) => {
+                            e.trigger.innerHTML = '<i class="bi bi-check"></i> Copied!';
+                            setTimeout(() => {
+                                e.trigger.innerHTML = '<i class="bi bi-clipboard"></i> Copy';
+                            }, 2000);
+                        });
+                    });
+                },
+                createCommandBlock(command) {
+                    return `<div class="command-block">
+                                <code>${command}</code>
+                                <button class="btn btn-outline-secondary btn-sm copy-btn" data-clipboard-text="${command}">
+                                    <i class="bi bi-clipboard"></i> Copy
+                                </button>
+                            </div>`;
+                },
+                updateProgress() {
+                    let currentProgress = 0;
+                    const interval = setInterval(() => {
+                        if (currentProgress < 100) {
+                            currentProgress += 10;
+                            this.progress = currentProgress;
+                        } else {
+                            clearInterval(interval);
+                        }
+                    }, 20);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
