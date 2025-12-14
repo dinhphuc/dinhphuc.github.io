@@ -9,66 +9,163 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.10/clipboard.min.js"></script>
     <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .main-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
         .command-block {
             position: relative;
             background: #f8f9fa;
             padding: 15px;
+            padding-right: 80px;
             border: 1px solid #e9ecef;
             margin-bottom: 15px;
             border-radius: 6px;
-            font-family: monospace;
+            font-family: 'Consolas', 'Monaco', monospace;
+            transition: all 0.3s ease;
+        }
+        .command-block:hover {
+            background: #e9ecef;
+        }
+        .command-block code {
+            display: block;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
         .copy-btn {
             position: absolute;
-            top: 5px;
-            right: 5px;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: all 0.3s ease;
         }
-        pre {
-            white-space: pre-wrap;
-            margin-bottom: 0;
+        .copy-btn:hover {
+            background: #667eea !important;
+            color: white !important;
         }
-        .progress {
-            height: 5px;
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-check:checked + .btn-outline-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+        }
+        .os-selector {
+            background: white;
+            padding: 5px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        h2 {
+            color: #2d3748;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+        .accordion-item {
+            border: 1px solid #e9ecef;
+            margin-bottom: 10px;
+            border-radius: 8px !important;
+            overflow: hidden;
+        }
+        .accordion-body {
+            background: #fafbfc;
+        }
+        code {
+            color: #667eea;
+            background: #f1f3f9;
+            padding: 2px 6px;
+            border-radius: 3px;
         }
     </style>
 </head>
 <body>
     <div id="app" class="container mt-5">
-        <h2 class="mb-4">Configure Multiple Git Accounts</h2>
-        <form @submit.prevent="generateInstructions" class="mb-4">
-            <div class="row g-3 align-items-center">
-                <div class="col-auto">
-                    <label for="email" class="col-form-label">Email:</label>
+        <div class="main-card">
+            <h2 class="text-center">
+                <i class="bi bi-git me-2"></i>Configure Multiple Git Accounts
+            </h2>
+            <form @submit.prevent="generateInstructions" class="mb-4">
+                <div class="row g-3 mb-3">
+                    <div class="col-12">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-pc-display me-2"></i>Select Environment:
+                        </label>
+                        <div class="os-selector d-inline-block">
+                            <div class="btn-group" role="group">
+                                <input type="radio" class="btn-check" id="osWindows" value="windows" v-model="os" @change="clearInstructions" autocomplete="off" checked>
+                                <label class="btn btn-outline-primary" for="osWindows">
+                                    <i class="bi bi-windows me-2"></i>Windows
+                                </label>
+                                
+                                <input type="radio" class="btn-check" id="osLinux" value="linux" v-model="os" @change="clearInstructions" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="osLinux">
+                                    <i class="bi bi-ubuntu me-2"></i>Linux
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="col">
-                    <input type="email" id="email" class="form-control" v-model="email" @input="updateFileName" placeholder="Enter your email" required>
-                </div>
-                <div class="col-auto">
-                    <label for="fileName" class="col-form-label">File name:</label>
-                </div>
-                <div class="col">
-                    <input type="text" id="fileName" class="form-control" v-model="fileName" placeholder="Enter file name" required>
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-gear-fill me-2"></i>Generate
-                    </button>
-                </div>
-            </div>
-        </form>
-        <div v-if="instructions">
-            <div class="progress mb-4">
-                <div class="progress-bar" role="progressbar" :style="{ width: progress + '%' }" :aria-valuenow="progress" aria-valuemin="0" aria-valuemax="100"></div>
-            </div>
-            <div class="accordion" id="instructionsAccordion">
-                <div class="accordion-item" v-for="(step, index) in steps" :key="index">
-                    <h2 class="accordion-header" :id="'heading' + index">
-                        <button class="accordion-button" :class="{ collapsed: index !== 0 }" type="button" data-bs-toggle="collapse" :data-bs-target="'#collapse' + index" :aria-expanded="index === 0 ? 'true' : 'false'" :aria-controls="'collapse' + index">
-                            Step {{ index + 1 }}: {{ step.title }}
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label for="email" class="form-label fw-bold">
+                            <i class="bi bi-envelope me-2"></i>Email:
+                        </label>
+                        <input type="email" id="email" class="form-control" v-model="email" @input="updateFileName" placeholder="example@email.com" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="fileName" class="form-label fw-bold">
+                            <i class="bi bi-file-earmark me-2"></i>SSH File Name:
+                        </label>
+                        <input type="text" id="fileName" class="form-control" v-model="fileName" placeholder="id_rsa_username" required>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-gear-fill me-2"></i>Generate Instructions
                         </button>
-                    </h2>
-                    <div :id="'collapse' + index" class="accordion-collapse collapse" :class="{ show: index === 0 }" :aria-labelledby="'heading' + index" data-bs-parent="#instructionsAccordion">
-                        <div class="accordion-body" v-html="step.content"></div>
+                    </div>
+                </div>
+            </form>
+
+            <div v-if="instructions">
+                <div class="mt-4 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small">
+                            <i class="bi bi-info-circle me-1"></i>Progress
+                        </span>
+                        <span class="badge bg-primary">{{ progress }}%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" :style="{ width: progress + '%' }" :aria-valuenow="progress" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+                <div class="accordion" id="instructionsAccordion">
+                    <div class="accordion-item" v-for="(step, index) in steps" :key="index">
+                        <h2 class="accordion-header" :id="'heading' + index">
+                            <button class="accordion-button" :class="{ collapsed: index !== 0 }" type="button" data-bs-toggle="collapse" :data-bs-target="'#collapse' + index" :aria-expanded="index === 0 ? 'true' : 'false'" :aria-controls="'collapse' + index">
+                                <i class="bi bi-check-circle me-2"></i>
+                                <strong>Step {{ index + 1 }}:</strong>&nbsp;{{ step.title }}
+                            </button>
+                        </h2>
+                        <div :id="'collapse' + index" class="accordion-collapse collapse" :class="{ show: index === 0 }" :aria-labelledby="'heading' + index" data-bs-parent="#instructionsAccordion">
+                            <div class="accordion-body" v-html="step.content"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -82,6 +179,7 @@
             data: {
                 email: '',
                 fileName: '',
+                os: 'windows',
                 instructions: '',
                 progress: 0,
                 steps: []
@@ -90,74 +188,98 @@
                 updateFileName() {
                     this.fileName = this.email.split('@')[0];
                 },
+                clearInstructions() {
+                    this.instructions = '';
+                    this.progress = 0;
+                    this.steps = [];
+                },
                 generateInstructions() {
+                    const isWindows = this.os === 'windows';
+                    const sshPath = isWindows ? 'C:\\Users\\username\\.ssh' : '~/.ssh';
+                    const userPath = isWindows ? 'C:\\Users\\username' : '~';
+                    const gitBinPath = 'C:\\Program Files\\Git\\bin';
+                    
                     const commandBlocks = [
                         "mkdir .ssh",
                         `ssh-keygen -t rsa -C "${this.email}" -f "id_rsa_${this.fileName}"`,
                         'exec ssh-agent bash',
                         `ssh-add ~/.ssh/id_rsa_${this.fileName}`,
+                        isWindows ? 'Get-Service ssh-agent | Set-Service -StartupType Automatic' : 'eval "$(ssh-agent -s)"',
                         `git clone git@github-${this.fileName}:username/PROJECT_NAME.git`,
                         `git config user.name ${this.fileName}`,
                         `git config user.email ${this.email}`
                     ];
 
-                    this.steps = [
-                        {
-                            title: "Check .ssh directory",
-                            content: `
-                                <p>Check if the directory <code>C:\\Users\\username\\.ssh</code> exists:</p>
-                                <ul>
-                                    <li>If it exists, go to the next step</li>
-                                    <li>If not:
-                                        <ul>
-                                            <li>Open cmd (Run as administrator)</li>
-                                            <li>Navigate to <code>C:\\Users\\username</code></li>
-                                            <li>Run command: ${this.createCommandBlock(commandBlocks[0])}</li>
-                                        </ul>
-                                    </li>
-                                </ul>
-                            `
-                        },
-                        {
-                            title: "Create SSH key",
-                            content: `
-                                <p>To create an SSH key:</p>
-                                <ol>
-                                    <li>Navigate to directory <code>C:\\Users\\username\\.ssh</code></li>
-                                    <li>Open git bash here</li>
-                                    <li>Run command: ${this.createCommandBlock(commandBlocks[1])}</li>
-                                </ol>
-                            `
-                        },
-                        {
-                            title: "Add SSH key to GitHub",
-                            content: `
-                                <ol>
-                                    <li>Go to GitHub account → Settings → SSH and GPG keys</li>
-                                    <li>Title: should be computer name (e.g., PC_ABC001)</li>
-                                    <li>Key: content of file <code>id_rsa_${this.fileName}.pub</code></li>
-                                </ol>
-                            `
-                        },
-                        {
-                            title: "Add SSH key to Windows",
-                            content: `
-                                <ol>
-                                    <li>Navigate to <code>C:\\Program Files\\Git\\bin</code></li>
-                                    <li>Click file <code>bash.exe</code></li>
-                                    <li>Run command: ${this.createCommandBlock(commandBlocks[2])}</li>
-                                    <li>Run command: ${this.createCommandBlock(commandBlocks[3])}</li>
-                                </ol>
-                            `
-                        },
-                        {
-                            title: "Create config file",
-                            content: `
-                                <ol>
-                                    <li>Navigate to directory <code>C:\\Users\\username\\.ssh</code></li>
-                                    <li>Create a config file with the following content:</li>
-                                </ol>
-                                <pre class="bg-light p-3 rounded">
+                    if (isWindows) {
+                        this.steps = [
+                            {
+                                title: "Check .ssh directory",
+                                content: `
+                                    <p>Check if the directory <code>${sshPath}</code> exists:</p>
+                                    <ul>
+                                        <li>If it exists, go to the next step</li>
+                                        <li>If not:
+                                            <ul>
+                                                <li>Open cmd (Run as administrator)</li>
+                                                <li>Navigate to <code>${userPath}</code></li>
+                                                <li>Run command: ${this.createCommandBlock(commandBlocks[0])}</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                `
+                            },
+                            {
+                                title: "Create SSH key",
+                                content: `
+                                    <p>To create an SSH key:</p>
+                                    <ol>
+                                        <li>Navigate to directory <code>${sshPath}</code></li>
+                                        <li>Open git bash here</li>
+                                        <li>Run command: ${this.createCommandBlock(commandBlocks[1])}</li>
+                                    </ol>
+                                `
+                            },
+                            {
+                                title: "Add SSH key to GitHub",
+                                content: `
+                                    <ol>
+                                        <li>Go to GitHub account → Settings → SSH and GPG keys</li>
+                                        <li>Title: should be computer name (e.g., PC_ABC001)</li>
+                                        <li>Key: content of file <code>id_rsa_${this.fileName}.pub</code></li>
+                                    </ol>
+                                `
+                            },
+                            {
+                                title: "Add SSH key to Windows (Method 1: Git Bash)",
+                                content: `
+                                    <ol>
+                                        <li>Navigate to <code>${gitBinPath}</code></li>
+                                        <li>Click file <code>bash.exe</code></li>
+                                        <li>Run command: ${this.createCommandBlock(commandBlocks[2])}</li>
+                                        <li>Run command: ${this.createCommandBlock(commandBlocks[3])}</li>
+                                    </ol>
+                                `
+                            },
+                            {
+                                title: "Add SSH key to Windows (Method 2: PowerShell)",
+                                content: `
+                                    <p>Alternatively, use Windows OpenSSH:</p>
+                                    <ol>
+                                        <li>Open PowerShell as Administrator</li>
+                                        <li>Start ssh-agent service: ${this.createCommandBlock(commandBlocks[4])}</li>
+                                        <li>Start the service: ${this.createCommandBlock('Start-Service ssh-agent')}</li>
+                                        <li>Add SSH key: ${this.createCommandBlock(`ssh-add ${sshPath}\\id_rsa_${this.fileName}`)}</li>
+                                    </ol>
+                                `
+                            },
+                            {
+                                title: "Create config file",
+                                content: `
+                                    <ol>
+                                        <li>Navigate to directory <code>${sshPath}</code></li>
+                                        <li>Create a config file with the following content:</li>
+                                    </ol>
+                                    <pre class="bg-light p-3 rounded">
 # Default GitHub
 Host github.com
     HostName github.com
@@ -167,31 +289,127 @@ Host github-${this.fileName}
     HostName github.com
     User git
     IdentityFile ~/.ssh/id_rsa_${this.fileName}
-                                </pre>
-                            `
-                        },
-                        {
-                            title: "Clone git repository",
-                            content: `
-                                <ol>
-                                    <li>Navigate to the directory where you want to store the project</li>
-                                    <li>Open git bash here</li>
-                                    <li>Run command: ${this.createCommandBlock(commandBlocks[4])}</li>
-                                </ol>
-                            `
-                        },
-                        {
-                            title: "Push code with second GitHub user",
-                            content: `
-                                <ol>
-                                    <li>Navigate to the directory storing the cloned project</li>
-                                    <li>Open git bash here</li>
-                                    <li>Run command: ${this.createCommandBlock(commandBlocks[5])}</li>
-                                    <li>Run command: ${this.createCommandBlock(commandBlocks[6])}</li>
-                                </ol>
-                            `
-                        }
-                    ];
+                                    </pre>
+                                `
+                            },
+                            {
+                                title: "Clone git repository",
+                                content: `
+                                    <ol>
+                                        <li>Navigate to the directory where you want to store the project</li>
+                                        <li>Open git bash here</li>
+                                        <li>Run command: ${this.createCommandBlock(commandBlocks[5])}</li>
+                                    </ol>
+                                `
+                            },
+                            {
+                                title: "Push code with second GitHub user",
+                                content: `
+                                    <ol>
+                                        <li>Navigate to the directory storing the cloned project</li>
+                                        <li>Open git bash here</li>
+                                        <li>Run command: ${this.createCommandBlock(commandBlocks[6])}</li>
+                                        <li>Run command: ${this.createCommandBlock(commandBlocks[7])}</li>
+                                    </ol>
+                                `
+                            }
+                        ];
+                    } else {
+                        this.steps = [
+                            {
+                                title: "Check .ssh directory",
+                                content: `
+                                    <p>Check if the directory <code>${sshPath}</code> exists:</p>
+                                    <ul>
+                                        <li>If it exists, go to the next step</li>
+                                        <li>If not:
+                                            <ul>
+                                                <li>Open terminal</li>
+                                                <li>Run command: ${this.createCommandBlock(commandBlocks[0])}</li>
+                                                <li>Set permissions: ${this.createCommandBlock('chmod 700 ~/.ssh')}</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                `
+                            },
+                            {
+                                title: "Create SSH key",
+                                content: `
+                                    <p>To create an SSH key:</p>
+                                    <ol>
+                                        <li>Open terminal</li>
+                                        <li>Navigate to directory <code>${sshPath}</code></li>
+                                        <li>Run command: ${this.createCommandBlock(commandBlocks[1])}</li>
+                                        <li>Set permissions: ${this.createCommandBlock(`chmod 600 ~/.ssh/id_rsa_${this.fileName}`)}</li>
+                                    </ol>
+                                `
+                            },
+                            {
+                                title: "Add SSH key to GitHub",
+                                content: `
+                                    <ol>
+                                        <li>Go to GitHub account → Settings → SSH and GPG keys</li>
+                                        <li>Title: should be computer name (e.g., Ubuntu_ABC001)</li>
+                                        <li>Key: content of file <code>id_rsa_${this.fileName}.pub</code></li>
+                                        <li>To view the public key, run: ${this.createCommandBlock(`cat ~/.ssh/id_rsa_${this.fileName}.pub`)}</li>
+                                    </ol>
+                                `
+                            },
+                            {
+                                title: "Add SSH key to ssh-agent",
+                                content: `
+                                    <ol>
+                                        <li>Start ssh-agent: ${this.createCommandBlock(commandBlocks[4])}</li>
+                                        <li>Add SSH key: ${this.createCommandBlock(commandBlocks[3])}</li>
+                                        <li>Verify key added: ${this.createCommandBlock('ssh-add -l')}</li>
+                                    </ol>
+                                `
+                            },
+                            {
+                                title: "Create config file",
+                                content: `
+                                    <ol>
+                                        <li>Navigate to directory <code>${sshPath}</code></li>
+                                        <li>Create/edit config file: ${this.createCommandBlock('nano ~/.ssh/config')}</li>
+                                        <li>Add the following content:</li>
+                                    </ol>
+                                    <pre class="bg-light p-3 rounded">
+# Default GitHub
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_rsa
+Host github-${this.fileName}
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_rsa_${this.fileName}
+                                    </pre>
+                                    <ol start="4">
+                                        <li>Set permissions: ${this.createCommandBlock('chmod 600 ~/.ssh/config')}</li>
+                                    </ol>
+                                `
+                            },
+                            {
+                                title: "Clone git repository",
+                                content: `
+                                    <ol>
+                                        <li>Navigate to the directory where you want to store the project</li>
+                                        <li>Run command: ${this.createCommandBlock(commandBlocks[5])}</li>
+                                    </ol>
+                                `
+                            },
+                            {
+                                title: "Push code with second GitHub user",
+                                content: `
+                                    <ol>
+                                        <li>Navigate to the directory storing the cloned project</li>
+                                        <li>Run command: ${this.createCommandBlock(commandBlocks[6])}</li>
+                                        <li>Run command: ${this.createCommandBlock(commandBlocks[7])}</li>
+                                    </ol>
+                                `
+                            }
+                        ];
+                    }
 
                     this.instructions = true;
                     this.updateProgress();
