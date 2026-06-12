@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Git Rebase Workflow Tool</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f0;
+    --bg-tertiary: #eeede8;
+    --bg-info: #e6f1fb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --bg-danger: #fcebeb;
+    --text-primary: #1a1a18;
+    --text-secondary: #5f5e5a;
+    --text-info: #185fa5;
+    --text-success: #3b6d11;
+    --text-warning: #854f0b;
+    --text-danger: #a32d2d;
+    --border-tertiary: rgba(0,0,0,0.12);
+    --border-secondary: rgba(0,0,0,0.22);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1e1e1c;
+      --bg-secondary: #2a2a28;
+      --bg-tertiary: #222220;
+      --bg-info: #042c53;
+      --bg-success: #173404;
+      --bg-warning: #412402;
+      --bg-danger: #501313;
+      --text-primary: #e8e7e0;
+      --text-secondary: #b4b2a9;
+      --text-info: #85b7eb;
+      --text-success: #97c459;
+      --text-warning: #ef9f27;
+      --text-danger: #f09595;
+      --border-tertiary: rgba(255,255,255,0.1);
+      --border-secondary: rgba(255,255,255,0.2);
+    }
+  }
+
+  html, body {
+    font-family: var(--font-sans);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+  }
+
+  .header {
+    margin-bottom: 2rem;
+  }
+
+  .header h1 {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .header p {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .card {
+    background: var(--bg-primary);
+    border: 0.5px solid var(--border-tertiary);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+
+  .input-row label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .input-row input {
+    flex: 1;
+    font-size: 14px;
+    font-family: var(--font-mono);
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--border-secondary);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .input-row input:focus {
+    border-color: var(--text-info);
+    box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.12);
+  }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    padding: 6px 14px;
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--border-secondary);
+    background: transparent;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.15s;
+    font-family: var(--font-sans);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .tab:hover:not(.active) {
+    background: var(--bg-secondary);
+  }
+
+  .tab.active {
+    background: var(--bg-info);
+    color: var(--text-info);
+    border-color: transparent;
+    font-weight: 500;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .step { margin-bottom: 1rem; }
+
+  .step-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .badge {
+    background: var(--bg-secondary);
+    border: 0.5px solid var(--border-tertiary);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .badge.warn {
+    background: var(--bg-warning);
+    color: var(--text-warning);
+    border-color: transparent;
+  }
+
+  .code-block {
+    background: var(--bg-secondary);
+    border: 0.5px solid var(--border-tertiary);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .code-text {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-primary);
+    white-space: pre;
+    line-height: 1.7;
+    overflow-x: auto;
+    flex: 1;
+  }
+
+  .copy-btn {
+    flex-shrink: 0;
+    padding: 5px 11px;
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--border-secondary);
+    background: var(--bg-primary);
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+    font-family: var(--font-sans);
+    margin-top: 2px;
+  }
+
+  .copy-btn:hover {
+    background: var(--bg-secondary);
+  }
+
+  .copy-btn.copied {
+    color: var(--text-success);
+    border-color: transparent;
+    background: var(--bg-success);
+  }
+
+  hr.divider {
+    border: none;
+    border-top: 0.5px solid var(--border-tertiary);
+    margin: 1.25rem 0;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .copy-all-btn {
+    margin-top: 1rem;
+    width: 100%;
+    padding: 8px;
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--border-secondary);
+    background: transparent;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s;
+    font-family: var(--font-sans);
+  }
+
+  .copy-all-btn:hover { background: var(--bg-secondary); }
+  .copy-all-btn.copied {
+    color: var(--text-success);
+    border-color: transparent;
+    background: var(--bg-success);
+  }
+
+  .note {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 9px 13px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border-left: 2px solid var(--border-secondary);
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  .note.danger {
+    border-left-color: #e24b4a;
+    background: var(--bg-danger);
+    color: var(--text-danger);
+  }
+
+  .note.success {
+    border-left-color: #639922;
+    background: var(--bg-success);
+    color: var(--text-success);
+  }
+
+  .note code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2.5rem;
+    opacity: 0.6;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1><i class="ti ti-git-branch" style="font-size:22px" aria-hidden="true"></i> Git Rebase Workflow Tool</h1>
+    <p>Nhập branch cá nhân — tự động tạo lệnh git theo từng tình huống.</p>
+  </div>
+
+  <div class="card">
+    <div class="input-row">
+      <label><i class="ti ti-git-branch" aria-hidden="true"></i> Branch của bạn:</label>
+      <input type="text" id="branchInput" placeholder="feat/user-management" value="feat/user-management" oninput="refresh()" />
+    </div>
+    <div class="input-row" style="margin-top:-0.5rem">
+      <label><i class="ti ti-git-branch" aria-hidden="true"></i> Main branch:</label>
+      <input type="text" id="mainBranchInput" placeholder="main" value="main" oninput="refresh()" />
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('stash')"><i class="ti ti-device-floppy" style="font-size:14px" aria-hidden="true"></i> Có code chưa commit</button>
+      <button class="tab" onclick="switchTab('committed')"><i class="ti ti-git-commit" style="font-size:14px" aria-hidden="true"></i> Đã commit rồi</button>
+      <button class="tab" onclick="switchTab('conflict')"><i class="ti ti-alert-triangle" style="font-size:14px" aria-hidden="true"></i> Gặp conflict</button>
+      <button class="tab" onclick="switchTab('pr')"><i class="ti ti-git-pull-request" style="font-size:14px" aria-hidden="true"></i> Trước khi tạo PR</button>
+      <button class="tab" onclick="switchTab('full')"><i class="ti ti-list" style="font-size:14px" aria-hidden="true"></i> Full workflow</button>
+    </div>
+
+    <!-- TH1: Chưa commit -->
+    <div class="section active" id="tab-stash">
+      <div class="note">Trường hợp 1: Bạn đang có thay đổi chưa commit và muốn lấy code mới nhất từ main.</div>
+
+      <div class="step">
+        <div class="step-label"><span class="badge">1</span> Lưu tạm thay đổi</div>
+        <div class="code-block"><span class="code-text" id="s1">git stash</span><button class="copy-btn" onclick="copyCode(this,'s1')"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="badge">2</span> Chuyển sang main và lấy code mới nhất</div>
+        <div class="code-block"><span class="code-text" id="s2">git checkout main
+git pull origin main</span><button class="copy-btn" onclick="copyCode(this,'s2')"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="badge">3</span> Quay lại branch đang làm</div>
+        <div class="code-block"><span class="code-text" id="s3">git checkout feat/user-management</span><button class="copy-btn" onclick="copyCode(this,'s3')"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="badge">4</span> Rebase lên main mới nhất</div>
+        <div class="code-block"><span class="code-text" id="s4">git rebase main</span><button class="copy-btn" onclick="copyCode(this,'s4')"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="badge">5</span> Khôi phục code đã stash</div>
+        <div class="code-block"><span class="code-text" id="s5">git stash pop</span><button class="copy-btn" onclick="copyCode(this,'s5')"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      </div>
+      <button class="copy-all-btn" id="copyall-stash" onclick="copyAll('stash')"><i class="ti ti-copy" aria-hidden="true"></i> Copy tất cả</button>
+    </div>
+
+    <!-- TH2: Đã commit -->
+    <div class="section" id="tab-committed">
+      <div class="note">Trường hợp 2: Bạn đã commit xong và muốn rebase với main mới nhất.</div>
+
+      <div class="step">
+        <div class="step-label"><span class="badge">1</span> Lấy code mới nhất từ main</div>
+        <div class="code-block"><span class="code-text" id="c1">git checkout main
+git pull origin main</span><button class="copy-btn" onclick="copyCode(this,'c1')"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="badge">2</span> Quay lại branch cá nhân</div>
+        <div class="code-block"><span class="code-text" id="c2">git checkout feat/user-management</span><button class="copy-btn" onclick="copyCode(this,'c2')"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="badge">3</span> Rebase</div>
+        <div class="code-block"><span class="code-text" id="c3">git rebase main</span><button class="copy-btn" onclick="copyCode(this,'c3')"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      </div>
+      <button class="copy-all-btn" id="copyall-committed" onclick="copyAll('committed')"><i class="ti ti-copy" aria-hidden="true"></i> Copy tất cả</button>
+    </div>
+
+    <!-- Conflict -->
+    <div class="section" id="tab-conflict">
+      <div class="note">Git báo <code>CONFLICT (content): Merge conflict in xxx.cs</code> — xử lý theo các bước sau.</div>
+
+      <div class="step">
+        <div class="step-label"><span class="badge">1</span> Kiểm tra file bị conflict</div>
+        <div class="code-block"><span class="code-text" id="cf1">git status</span><button class="copy-btn" onclick="copyCode(this,'cf1')"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="badge">2</span> Sau khi sửa xong conflict trong file</div>
+        <div class="code-block"><span class="code-text" id="cf2">git add .
+git rebase --continue</span><button class="copy-btn" onclick="copyCode(this,'cf2')"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      </div>
+      <div class="note">Nếu còn conflict, Git sẽ tiếp tục báo — lặp lại bước 2 cho đến khi xong.</div>
+
+      <hr class="divider" />
+
+      <div class="section-title"><i class="ti ti-ban" aria-hidden="true"></i> Muốn hủy rebase?</div>
+      <div class="code-block"><span class="code-text" id="cf3">git rebase --abort</span><button class="copy-btn" onclick="copyCode(this,'cf3')"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      <p style="font-size:12px;color:var(--text-secondary);margin-top:6px">Branch sẽ quay về trạng thái trước khi rebase.</p>
+      <button class="copy-all-btn" id="copyall-conflict" onclick="copyAll('conflict')"><i class="ti ti-copy" aria-hidden="true"></i> Copy toàn bộ conflict flow</button>
+    </div>
+
+    <!-- Trước khi tạo PR -->
+    <div class="section" id="tab-pr">
+      <div class="note success">Đảm bảo branch đã rebase với main mới nhất trước khi tạo PR.</div>
+
+      <div class="step">
+        <div class="step-label"><span class="badge">1</span> Cập nhật main và rebase</div>
+        <div class="code-block"><span class="code-text" id="p1">git checkout main
+git pull origin main
+
+git checkout feat/user-management
+git rebase main</span><button class="copy-btn" onclick="copyCode(this,'p1')"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      </div>
+
+      <hr class="divider" />
+
+      <div class="section-title"><i class="ti ti-upload" aria-hidden="true"></i> Push lên remote</div>
+
+      <div class="step">
+        <div class="step-label"><span class="badge">Lần đầu</span> Chưa có branch trên remote</div>
+        <div class="code-block"><span class="code-text" id="p2">git push -u origin feat/user-management</span><button class="copy-btn" onclick="copyCode(this,'p2')"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="badge">Sau rebase</span> Branch đã tồn tại trên remote</div>
+        <div class="code-block"><span class="code-text" id="p3">git push --force-with-lease</span><button class="copy-btn" onclick="copyCode(this,'p3')"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      </div>
+      <div class="note danger"><i class="ti ti-x" aria-hidden="true"></i> Không dùng <code>git push --force</code> — có thể ghi đè thay đổi của người khác.</div>
+      <button class="copy-all-btn" id="copyall-pr" onclick="copyAll('pr')"><i class="ti ti-copy" aria-hidden="true"></i> Copy toàn bộ PR flow</button>
+    </div>
+
+    <!-- Full workflow -->
+    <div class="section" id="tab-full">
+      <div class="note">Toàn bộ flow từ lúc đang code đến khi tạo PR.</div>
+      <div class="code-block" style="align-items:flex-start">
+        <span class="code-text" id="fw" style="line-height:1.8"></span>
+        <button class="copy-btn" onclick="copyCode(this,'fw')" style="margin-top:2px"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button>
+      </div>
+      <button class="copy-all-btn" id="copyall-full" onclick="copyAll('full')"><i class="ti ti-copy" aria-hidden="true"></i> Copy toàn bộ workflow</button>
+    </div>
+  </div>
+
+  <p class="footer">Git Rebase Workflow Tool</p>
+</div>
+
+<script>
+function getBranch() {
+  return document.getElementById('branchInput').value.trim() || 'feat/your-branch';
+}
+
+function getMainBranch() {
+  return document.getElementById('mainBranchInput').value.trim() || 'main';
+}
+
+function buildCommands(branch, mainBranch) {
+  return {
+    stash: {
+      full: `git stash\n\ngit checkout ${mainBranch}\ngit pull origin ${mainBranch}\n\ngit checkout ${branch}\ngit rebase ${mainBranch}\n\ngit stash pop`
+    },
+    committed: {
+      full: `git checkout ${mainBranch}\ngit pull origin ${mainBranch}\n\ngit checkout ${branch}\ngit rebase ${mainBranch}`
+    },
+    conflict: {
+      full: `git status\n\ngit add .\ngit rebase --continue\n\n# nếu muốn hủy rebase\n\ngit rebase --abort`
+    },
+    pr: {
+      full: `git checkout ${mainBranch}\ngit pull origin ${mainBranch}\n\ngit checkout ${branch}\ngit rebase ${mainBranch}\n\n# lần đầu push\n\ngit push -u origin ${branch}\n\n# sau rebase, nếu branch đã tồn tại\n\ngit push --force-with-lease`
+    },
+    workflow: {
+      full: `# Đang code trên ${branch}\n\ngit stash\n\ngit checkout ${mainBranch}\ngit pull origin ${mainBranch}\n\ngit checkout ${branch}\ngit rebase ${mainBranch}\n\ngit stash pop\n\n# code tiếp\n\ngit add .\ngit commit -m "your commit message"\n\n# trước khi tạo PR\n\ngit checkout ${mainBranch}\ngit pull origin ${mainBranch}\n\ngit checkout ${branch}\ngit rebase ${mainBranch}\n\ngit push --force-with-lease`
+    }
+  };
+}
+
+function refresh() {
+  const b = getBranch();
+  const m = getMainBranch();
+  const commands = buildCommands(b, m);
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+  set('s3', `git checkout ${b}`);
+  set('s2', `git checkout ${m}\ngit pull origin ${m}`);
+  set('c2', `git checkout ${b}`);
+  set('c1', `git checkout ${m}\ngit pull origin ${m}`);
+  set('s4', `git rebase ${m}`);
+  set('c3', `git rebase ${m}`);
+  set('p1', `git checkout ${m}\ngit pull origin ${m}\n\ngit checkout ${b}\ngit rebase ${m}`);
+  set('p2', `git push -u origin ${b}`);
+  set('fw', commands.workflow.full);
+}
+
+function copyCode(btn, id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    btn.innerHTML = '<i class="ti ti-check" aria-hidden="true"></i> Đã copy';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = '<i class="ti ti-copy" aria-hidden="true"></i> Copy';
+    }, 1800);
+  });
+}
+
+function copyAll(tab) {
+  const b = getBranch();
+  const m = getMainBranch();
+  const commands = buildCommands(b, m);
+  const texts = {
+    stash: commands.stash.full,
+    committed: commands.committed.full,
+    conflict: commands.conflict.full,
+    pr: commands.pr.full,
+    full: commands.workflow.full
+  };
+  const btn = document.getElementById('copyall-' + tab);
+  navigator.clipboard.writeText(texts[tab]).then(() => {
+    btn.classList.add('copied');
+    btn.innerHTML = '<i class="ti ti-check" aria-hidden="true"></i> Đã copy tất cả';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = '<i class="ti ti-copy" aria-hidden="true"></i> Copy tất cả';
+    }, 1800);
+  });
+}
+
+function switchTab(name) {
+  const tabNames = ['stash','committed','conflict','pr','full'];
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', tabNames[i] === name);
+  });
+  document.querySelectorAll('.section').forEach(s => {
+    s.classList.toggle('active', s.id === 'tab-' + name);
+  });
+}
+
+refresh();
+</script>
+</body>
+</html>

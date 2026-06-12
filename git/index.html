@@ -198,6 +198,15 @@
                     const sshPath = isWindows ? 'C:\\Users\\username\\.ssh' : '~/.ssh';
                     const userPath = isWindows ? 'C:\\Users\\username' : '~';
                     const gitBinPath = 'C:\\Program Files\\Git\\bin';
+                    const sshConfig = `# Default GitHub
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_rsa
+Host github-${this.fileName}
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_rsa_${this.fileName}`;
                     
                     const commandBlocks = [
                         "mkdir .ssh",
@@ -279,17 +288,7 @@
                                         <li>Navigate to directory <code>${sshPath}</code></li>
                                         <li>Create a config file with the following content:</li>
                                     </ol>
-                                    <pre class="bg-light p-3 rounded">
-# Default GitHub
-Host github.com
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/id_rsa
-Host github-${this.fileName}
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/id_rsa_${this.fileName}
-                                    </pre>
+                                    ${this.createCommandBlock(sshConfig)}
                                 `
                             },
                             {
@@ -373,17 +372,7 @@ Host github-${this.fileName}
                                         <li>Create/edit config file: ${this.createCommandBlock('nano ~/.ssh/config')}</li>
                                         <li>Add the following content:</li>
                                     </ol>
-                                    <pre class="bg-light p-3 rounded">
-# Default GitHub
-Host github.com
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/id_rsa
-Host github-${this.fileName}
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/id_rsa_${this.fileName}
-                                    </pre>
+                                    ${this.createCommandBlock(sshConfig)}
                                     <ol start="4">
                                         <li>Set permissions: ${this.createCommandBlock('chmod 600 ~/.ssh/config')}</li>
                                     </ol>
